@@ -1,0 +1,42 @@
+version: '3'
+services:
+
+  db:
+    restart: always
+    image: postgres:alpine
+    environment:
+     - "POSTGRES_USER=pub_relay"
+    volumes:
+     - ./postgres:/var/lib/postgresql/data
+
+  redis:
+    restart: always
+    image: redis:alpine
+    volumes:
+     - ./redis:/data
+
+  web:
+    build: .
+    image: yukimochi/mastodon_pub-relay
+    restart: always
+    command: bundle exec rails s
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./config:/pub-relay/config
+
+  sidekiq:
+    build: .
+    image: yukimochi/mastodon_pub-relay
+    restart: always
+    command: bundle exec sidekiq -c 5 -q default
+    env_file: .env
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./config:/pub-relay/config
