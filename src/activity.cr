@@ -1,9 +1,11 @@
+require "uri"
 require "./converters"
 
 class Activity
   include JSON::Serializable
 
   getter id : String?
+  getter actor : String?
   getter object : String | Object
 
   @[JSON::Field(key: "type", converter: FuzzyStringArrayConverter)]
@@ -45,10 +47,19 @@ class Activity
     to.includes?(PUBLIC_COLLECTION) || cc.includes?(PUBLIC_COLLECTION)
   end
 
+  def subscribed?
+    host = URI.parse(actor || "").host
+    PubRelay.redis.exists("subscription:#{host}") == 1
+  end
+
+  def actor_blocked?
+    PubRelay.redis.exists("blocked_actor:#{actor}") == 1
+  end
+
   VALID_TYPES = {"Create", "Update", "Delete", "Announce", "Undo"}
 
   def valid_for_rebroadcast?
-    signature_present? && addressed_to_public? && types.any? { |type| VALID_TYPES.includes? type }
+    signature_present? && subscribed? && !actor_blocked? && addressed_to_public? && types.any? { |type| VALID_TYPES.includes? type }
   end
 
   class Object
