@@ -1,7 +1,6 @@
 version: "2.3"
 services:
   server:
-    build: .
     image: yukimochi/pub_relay
     command: server
     restart: always
@@ -16,7 +15,6 @@ services:
     volumes:
       - "./actor.pem:/actor.pem"
   worker:
-    build: .
     image: yukimochi/pub_relay
     command: worker
     restart: always

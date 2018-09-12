@@ -17,7 +17,7 @@ RUN echo 'require "llvm/lib_llvm"; require "llvm/enums"; require "./src/server"'
     crystal build hack_worker.cr --static -o bin/worker
 
 FROM alpine:3.8
-
+# QEMU Placeholder
 RUN apk -U --no-cache add ca-certificates
 COPY --from=builder /pub_relay/bin/server /pub_relay/bin/worker /usr/bin/
 COPY ./spec/test_actor.pem /actor.pem
