@@ -1,0 +1,78 @@
+metadata:
+  name: amd64
+
+platform:
+    name: linux/amd64
+
+pipeline:
+- crystal_build:
+    image: alpine:3.8
+    commands:
+    - apk -U upgrade
+    - apk add build-base openssl-dev crystal shards llvm5-dev llvm5-static
+    - shards install --production
+    - echo 'require "llvm/lib_llvm"; require "llvm/enums"; require "./src/server"' > hack_server.cr
+    - echo 'require "llvm/lib_llvm"; require "llvm/enums"; require "./src/worker"' > hack_worker.cr
+    - mkdir -p bin
+    - crystal build hack_server.cr --static -o bin/server
+    - crystal build hack_worker.cr --static -o bin/worker
+- docker_build:
+    image: docker:git
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - /root/.docker/config.json:/root/.docker/config.json:ro
+    commands:
+        - docker version
+        - docker build . -t yukimochi/pub_relay:latest-amd64
+        - docker push yukimochi/pub_relay:latest-amd64
+
+---
+metadata:
+  name: arm64
+
+platform:
+    name: linux/arm64
+
+pipeline:
+- crystal_build:
+    image: alpine:3.8
+    commands:
+    - apk -U upgrade
+    - apk add build-base openssl-dev crystal shards llvm5-dev llvm5-static
+    - shards install --production
+    - echo 'require "llvm/lib_llvm"; require "llvm/enums"; require "./src/server"' > hack_server.cr
+    - echo 'require "llvm/lib_llvm"; require "llvm/enums"; require "./src/worker"' > hack_worker.cr
+    - mkdir -p bin
+    - crystal build hack_server.cr --static -o bin/server
+    - crystal build hack_worker.cr --static -o bin/worker
+- docker_build:
+    image: docker:git
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - /root/.docker/config.json:/root/.docker/config.json:ro
+    commands:
+        - docker version
+        - docker build . -t yukimochi/pub_relay:latest-arm64
+        - docker push yukimochi/pub_relay:latest-arm64
+
+---
+metadata:
+  name: push_manifest
+
+platform:
+    name: linux/amd64
+
+pipeline:
+- push_manifest:
+    image: docker:git
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - /root/.docker/config.json:/root/.docker/config.json:ro
+    commands:
+        - wget https://github.com/estesp/manifest-tool/releases/download/v0.7.0/manifest-tool-linux-amd64 -O /usr/bin/manifest-tool
+        - chmod +x /usr/bin/manifest-tool
+        - manifest-tool push from-spec manifest.yaml           
+
+depends_on:
+- amd64
+- arm64
