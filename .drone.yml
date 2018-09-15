@@ -28,6 +28,39 @@ pipeline:
 
 ---
 metadata:
+  name: amd64-ubuntu
+
+platform:
+    name: linux/amd64
+
+pipeline:
+- crystal_build:
+    image: ubuntu
+    commands:
+    - apt-get update
+    - apt-get -y install --no-install-recommends build-essential ca-certificates git gnupg2
+    - apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
+    - echo "deb http://dist.crystal-lang.org/apt crystal main" >   /etc/apt/sources.list.d/crystal.list
+    - apt-get update
+    - apt-get -y install --no-install-recommends crystal llvm-dev libgmp-dev libz-dev libssl1.0-dev
+    - shards install --production
+    - echo 'require "llvm/lib_llvm"; require "llvm/enums"; require "./src/server"' > hack_server.cr
+    - echo 'require "llvm/lib_llvm"; require "llvm/enums"; require "./src/worker"' > hack_worker.cr
+    - mkdir -p bin
+    - crystal build hack_server.cr -o bin/server
+    - crystal build hack_worker.cr -o bin/worker
+- docker_build:
+    image: docker:git
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - /root/.docker/config.json:/root/.docker/config.json:ro
+    commands:
+        - docker version
+        - docker build . -f Dockerfile.ubuntu -t yukimochi/pub_relay:ubuntu-amd64
+        - docker push yukimochi/pub_relay:ubuntu-amd64
+
+---
+metadata:
   name: arm64
 
 platform:
