@@ -38,8 +38,8 @@ pipeline:
     image: ubuntu
     commands:
     - apt-get update
-    - apt-get -y install --no-install-recommends build-essential ca-certificates git gnupg2
-    - apt-key adv --keyserver keys.gnupg.net --recv-keys 09617FD37CC06B54
+    - apt-get -y install --no-install-recommends build-essential ca-certificates curl git gnupg2
+    - curl -sL "https://keybase.io/crystal/pgp_keys.asc" | apt-key add -
     - echo "deb http://dist.crystal-lang.org/apt crystal main" >   /etc/apt/sources.list.d/crystal.list
     - apt-get update
     - apt-get -y install --no-install-recommends crystal llvm-dev libgmp-dev libz-dev libssl1.0-dev
