@@ -33,7 +33,11 @@ class InboxHandler
     when .unfollow?
       handle_unfollow(actor_from_signature, activity)
     when .valid_for_rebroadcast?
-      handle_forward(actor_from_signature, request_body)
+      if activity.subscribed?
+        handle_forward(actor_from_signature, request_body)
+      else
+        error(403, "Unsubscribed instance is not allowed.")
+      end
     end
 
     response.status_code = 202

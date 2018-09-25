@@ -32,6 +32,11 @@ class Activity
     end
   end
 
+  def subscribed?
+    host = URI.parse(actor || "").host
+    PubRelay.redis.exists("subscription:#{host}") == 1
+  end
+
   PUBLIC_COLLECTION = "https://www.w3.org/ns/activitystreams#Public"
 
   def object_is_public_collection?
@@ -47,12 +52,7 @@ class Activity
     to.includes?(PUBLIC_COLLECTION) || cc.includes?(PUBLIC_COLLECTION)
   end
 
-  def subscribed?
-    host = URI.parse(actor || "").host
-    PubRelay.redis.exists("subscription:#{host}") == 1
-  end
-
-  def no_publish?
+  def push_only?
     host = URI.parse(actor || "").host
     PubRelay.redis.exists("blocked_domain:#{host}") == 1
   end
@@ -60,7 +60,7 @@ class Activity
   VALID_TYPES = {"Create", "Update", "Delete", "Announce", "Undo"}
 
   def valid_for_rebroadcast?
-    signature_present? && subscribed? && !no_publish? && addressed_to_public? && types.any? { |type| VALID_TYPES.includes? type }
+    signature_present? && !push_only? && addressed_to_public? && types.any? { |type| VALID_TYPES.includes? type }
   end
 
   class Object
