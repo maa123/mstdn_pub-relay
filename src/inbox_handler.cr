@@ -51,6 +51,10 @@ class InboxHandler
       error(400, "Follow only allowed for #{Activity::PUBLIC_COLLECTION}")
     end
 
+    unless activity.subscribable?
+      error(403, "This instance is not allowed.")
+    end
+
     accept_activity = {
       "@context": {"https://www.w3.org/ns/activitystreams"},
 

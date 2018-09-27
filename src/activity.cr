@@ -32,6 +32,11 @@ class Activity
     end
   end
 
+  def subscribable?
+    host = URI.parse(actor || "").host
+    PubRelay.redis.exists("blocked_domain:#{host}") != 1
+  end
+
   def subscribed?
     host = URI.parse(actor || "").host
     PubRelay.redis.exists("subscription:#{host}") == 1
@@ -54,7 +59,7 @@ class Activity
 
   def push_only?
     host = URI.parse(actor || "").host
-    PubRelay.redis.exists("blocked_domain:#{host}") == 1
+    PubRelay.redis.exists("limited_domain:#{host}") == 1
   end
 
   VALID_TYPES = {"Create", "Update", "Delete", "Announce", "Undo"}
