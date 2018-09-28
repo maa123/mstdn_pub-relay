@@ -14,6 +14,11 @@ services:
       - "RELAY_DOMAIN=relay.toot.yukimochi.jp"
     volumes:
       - "./actor.pem:/actor.pem"
+    init: true
+    ulimits:
+      nofile:
+        soft: 65534
+        hard: 65534
   worker:
     image: yukimochi/pub_relay
     command: worker
@@ -26,6 +31,11 @@ services:
       - "RELAY_DOMAIN=relay.toot.yukimochi.jp"
     volumes:
       - "./actor.pem:/actor.pem"
+    init: true
+    ulimits:
+      nofile:
+        soft: 65534
+        hard: 65534
   redis:
     image: redis:alpine
     restart: always
