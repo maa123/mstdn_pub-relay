@@ -1,33 +1,43 @@
 version: "2.3"
 services:
   server:
-    build: .
-    image: yukimochi/pub_relay
-    command: server
+    image: yukimochi/pub_relay:ubuntu-amd64
     restart: always
-    network_mode: "host"
-    depends_on:
-      - redis
     environment:
       - "RELAY_HOST=127.0.0.1"
       - "RELAY_PORT=8085"
-      - "REDIS_URL=redis://127.0.0.1:6379"
+      - "REDIS_SIDEKIQ=redis://127.0.0.1:6379"
+      - "REDIS_SUBSCRIPTION=redis://127.0.0.1:6379"
       - "RELAY_DOMAIN=relay.toot.yukimochi.jp"
-    volumes:
-      - "./actor.pem:/actor.pem"
-  worker:
-    build: .
-    image: yukimochi/pub_relay
-    command: worker
-    restart: always
+    command: server
     network_mode: "host"
+    init: true
     depends_on:
       - redis
-    environment:
-      - "REDIS_URL=redis://127.0.0.1:6379"
-      - "RELAY_DOMAIN=relay.toot.yukimochi.jp"
     volumes:
       - "./actor.pem:/actor.pem"
+    ulimits:
+      nofile:
+        soft: 65534
+        hard: 65534
+  worker:
+    image: yukimochi/pub_relay:ubuntu-amd64
+    restart: always
+    environment:
+      - "REDIS_SIDEKIQ=redis://127.0.0.1:6379"
+      - "REDIS_SUBSCRIPTION=redis://127.0.0.1:6379"
+      - "RELAY_DOMAIN=relay.toot.yukimochi.jp"
+    command: worker -c 50
+    network_mode: "host"
+    init: true
+    depends_on:
+      - redis
+    volumes:
+      - "./actor.pem:/actor.pem"
+    ulimits:
+      nofile:
+        soft: 65534
+        hard: 65534
   redis:
     image: redis:alpine
     restart: always
